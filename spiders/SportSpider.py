@@ -1,20 +1,28 @@
 from abc import ABCMeta
-from typing import Generator
 
-import scrapy
 from scrapy.http import Response
 
-from items import NewsItem
+
+from items import News
 from spiders.EntSpider import EntSpider
+from utils import get_now_dt_str
 
 
 class SportSpider(EntSpider, metaclass=ABCMeta):
-    name = 'SportSpider'
+    name: str = "SportSpider"
 
-    def extract_article_item(self, article_res: Response) -> NewsItem:
-        item: NewsItem = super().extract_article_item(article_res)
-        item.url = "https://sports.news.naver.com/news?oid={oid}&aid={aid}".format(oid=item.oid, aid=item.aid)
+    def __init__(
+        self,
+        date: str = get_now_dt_str(),
+        join_char: str = "\n",
+        sid: str = "107",
+        **kwargs
+    ):
+        super().__init__(date=date, join_char=join_char, sid=sid, **kwargs)
+
+    def extract_article_item(self, article_res: Response) -> News:
+        item: News = super().extract_article_item(article_res)
+        item.url = "https://sports.news.naver.com/news?oid={oid}&aid={aid}".format(
+            oid=item.oid, aid=item.aid
+        )
         return item
-
-    def start_requests(self) -> Generator[scrapy.Request, None, None]:
-        yield scrapy.Request(url=self.list_url.format(sid1="107", date=self.date, page=1), callback=self.parse_list)
