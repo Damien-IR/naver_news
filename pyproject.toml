@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "naver-news-scraper"
+version = "0.1.0"
+description = "Naver news scraper written with scrapy"
+authors = ["Damien-IR <qq23667@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "naver_news_scraper" }]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+Scrapy = "^2.6.2"
+requests = "^2.28.1"
+
+
+[tool.poetry.group.test.dependencies]
+pytest-cov = "^3.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
