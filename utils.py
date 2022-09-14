@@ -1,7 +1,13 @@
+import json
 import re
 from datetime import datetime
 from typing import Optional, Dict, List, Iterable, Callable, Tuple
 from urllib.parse import urlsplit, urlunsplit, urlparse, ParseResult
+
+import requests
+from scrapy.http import HtmlResponse
+
+from settings import USER_AGENT
 
 
 def remove_query_and_fragment(url: str) -> str:
@@ -48,9 +54,31 @@ def strip_and_filter_str_list(
 
 def js_object_to_json(
     js_object: str, remove_str_iter: Optional[Iterable[str]] = None
-) -> str:
+) -> Dict:
     result: str = re.sub(r"(\w+)\s*:", r'"\1":', js_object)
     if remove_str_iter:
         for string in remove_str_iter:
             result = result.replace(string, '""')
-    return result
+    return json.loads(result)
+
+
+def convert_requests_res_to_scrapy(res: requests.Response) -> HtmlResponse:
+    # convert requests.Response to scrapy.Response
+    return HtmlResponse(
+        url=res.url,
+        status=res.status_code,
+        headers=res.headers,
+        body=res.content.decode(res.encoding),
+        request=res.request,
+        encoding=res.encoding,
+    )
+
+
+def get_scrapy_res_from_url(url: str, params=None, **kwargs) -> HtmlResponse:
+    try:
+        if not kwargs["headers"]["User-Agent"]:
+            kwargs["headers"]["User-Agent"] = USER_AGENT
+    except KeyError:
+        kwargs["headers"] = {"User-Agent": USER_AGENT}
+    res: requests.Response = requests.get(url, params, **kwargs)
+    return convert_requests_res_to_scrapy(res)

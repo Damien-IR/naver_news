@@ -1,18 +1,19 @@
-import json
 import re
 from abc import ABCMeta
-from typing import Generator, List, Dict
+from datetime import datetime
+from typing import List, Dict, Generator, Union
+from urllib.parse import urlparse, parse_qs
 
-from scrapy import Selector
-from scrapy.http import Request, Response
-from scrapy.spiders import Spider
+from scrapy import Spider, Selector, Request
+from scrapy.http import Response
 
 from items import News, Author
 from utils import (
-    js_object_to_json,
-    strip_and_filter_str_list,
-    get_oaid_from_news_url,
     get_now_dt_str,
+    remove_query_and_fragment,
+    js_object_to_json,
+    get_oaid_from_news_url,
+    strip_and_filter_str_list,
 )
 
 
@@ -51,15 +52,17 @@ class NewsSpider(Spider, metaclass=ABCMeta):
             map(lambda x: "https://news.naver.com/main/list.naver" + x, other_pages)
         )
 
+    def fmt_list_url(self, date: Union[str, datetime], page: int = 1) -> str:
+        if isinstance(date, datetime):
+            date = date.strftime("%Y%m%d")
+        return self.list_url.format(date=date, page=page)
+
     def extract_article_item(self, article_res: Response) -> News:
         title: str = article_res.css("head title::text").get()
         article_str: str = self.re_article_ptrn.search(article_res.text).group(1)
-        article_dict: Dict = json.loads(
-            js_object_to_json(article_str, ["document.title"])
-        )
+        article_dict: Dict = js_object_to_json(article_str, ["document.title"])
         office_str: str = self.re_office_ptrn.search(article_res.text).group(1)
-        office_dict: Dict = json.loads(js_object_to_json(office_str))
-
+        office_dict: Dict = js_object_to_json(office_str)
         oid, aid = get_oaid_from_news_url(article_res.url)
 
         content: List[str] = strip_and_filter_str_list(
@@ -70,7 +73,7 @@ class NewsSpider(Spider, metaclass=ABCMeta):
         sid1: str = article_dict["sectionInfo"]["firstSection"]
         sid2: str = article_dict["sectionInfo"]["secondSection"]
         sid3: str = article_dict["sectionInfo"]["thirdSection"]
-        url: str = article_res.url.split("?")[0].split("#")[0]
+        url: str = remove_query_and_fragment(article_res.url)
         upload_time: str = article_res.css(
             "span._ARTICLE_DATE_TIME::attr(data-date-time)"
         ).get()
@@ -117,9 +120,7 @@ class NewsSpider(Spider, metaclass=ABCMeta):
         return author_list
 
     def start_requests(self) -> Generator[Request, None, None]:
-        yield Request(
-            url=self.list_url.format(date=self.date, page=1), callback=self.parse_list
-        )
+        yield Request(url=self.fmt_list_url(date=self.date), callback=self.parse_list)
 
     def parse_list(self, response: Response) -> Generator[Request, None, None]:
         for page in self.extract_pages(response):
@@ -130,3 +131,83 @@ class NewsSpider(Spider, metaclass=ABCMeta):
 
     def parse_article(self, response: Response) -> Generator[News, None, None]:
         yield self.extract_article_item(response)
+
+
+class LSDSpider(NewsSpider, metaclass=ABCMeta):
+    name: str = "LSDSpider"
+
+    def __init__(
+        self,
+        date: str = get_now_dt_str(),
+        join_char: str = "\n",
+        sid: str = "100",
+        **kwargs,
+    ):
+        super().__init__(date, join_char, **kwargs)
+        self.list_url: str = (
+            "https://news.naver.com/main/list.naver?mode=LSD&mid=sec&listType=title"
+            "&sid1={sid1}&date={date}&page={page}"
+        )
+        self.article_url: str = "https://n.news.naver.com/mnews/article/{oid}/{aid}"
+        self.sid: str = sid
+
+    def convert_url(self, url: str, conv: str = "mnews") -> str:
+        if "mnews" in url and conv != "mnews":
+            url: str = url.replace("mnews", conv)
+        else:
+            parsed_url: urlparse = urlparse(url)
+            query_dict: Dict = parse_qs(parsed_url.query)
+            oid: str = query_dict["oid"][0]
+            aid: str = query_dict["aid"][0]
+            url = self.article_url.format(oid=oid, aid=aid)
+        return remove_query_and_fragment(url)
+
+    def fmt_list_url(self, date: Union[str, datetime], page: int = 1) -> str:
+        if isinstance(date, datetime):
+            date = date.strftime("%Y%m%d")
+        return self.list_url.format(sid1=self.sid, date=date, page=page)
+
+    def extract_article_links(self, list_res: Response) -> List[str]:
+        link_list: List[str] = super().extract_article_links(list_res)
+
+        return list(map(self.convert_url, link_list))
+
+    def start_requests(self) -> Generator[Request, None, None]:
+        yield Request(
+            url=self.fmt_list_url(self.date),
+            callback=self.parse_list,
+        )
+
+
+class EntSpider(LSDSpider, metaclass=ABCMeta):
+    name: str = "EntSpider"
+
+    def __init__(
+        self,
+        date: str = get_now_dt_str(),
+        join_char: str = "\n",
+        sid: str = "106",
+        **kwargs,
+    ):
+        super().__init__(date=date, join_char=join_char, sid=sid, **kwargs)
+        self.article_url: str = "https://n.news.naver.com/entertain/article/{oid}/{aid}"
+
+    def convert_url(self, url: str, conv: str = "entertain") -> str:
+        return super().convert_url(url, conv)
+
+
+class SportSpider(LSDSpider, metaclass=ABCMeta):
+    name: str = "SportSpider"
+
+    def __init__(
+        self,
+        date: str = get_now_dt_str(),
+        join_char: str = "\n",
+        sid: str = "107",
+        **kwargs,
+    ):
+        super().__init__(date=date, join_char=join_char, sid=sid, **kwargs)
+        self.article_url: str = "https://n.news.naver.com/sports/article/{oid}/{aid}"
+
+    def convert_url(self, url: str, conv: str = "sports") -> str:
+        return super().convert_url(url, conv)
