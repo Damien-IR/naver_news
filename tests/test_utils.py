@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime
 
-from utils import (
+from src.utils import (
     remove_query_and_fragment,
     get_oaid_from_news_url,
     strptime_util,

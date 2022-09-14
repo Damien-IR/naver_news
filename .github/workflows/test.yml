@@ -37,7 +37,7 @@ jobs:
     - name: Test with pytest
       run: |
         source .venv/bin/activate
-        poetry run pytest --cov=./ tests/ --cov-report=xml
+        poetry run pytest --cov=src/ tests/ --cov-report=xml
         poetry run coverage report
     - name: codecov
       uses: codecov/codecov-action@v3

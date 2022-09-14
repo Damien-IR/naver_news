@@ -7,8 +7,8 @@ from urllib.parse import urlparse, parse_qs
 from scrapy import Spider, Selector, Request
 from scrapy.http import Response
 
-from items import News, Author
-from utils import (
+from src.items import News, Author
+from src.utils import (
     get_now_dt_str,
     remove_query_and_fragment,
     js_object_to_json,

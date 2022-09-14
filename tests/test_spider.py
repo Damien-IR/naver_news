@@ -3,9 +3,9 @@ from typing import List
 
 from scrapy.http import Response
 
-from items import News
-from spiders import NewsSpider, EntSpider, SportSpider
-from utils import get_scrapy_res_from_url
+from src.items import News
+from src.spiders import NewsSpider, EntSpider, SportSpider
+from src.utils import get_scrapy_res_from_url
 
 
 class TestSpider(unittest.TestCase):

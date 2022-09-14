@@ -7,7 +7,7 @@ from urllib.parse import urlsplit, urlunsplit, urlparse, ParseResult
 import requests
 from scrapy.http import HtmlResponse
 
-from settings import USER_AGENT
+from src.settings import USER_AGENT
 
 
 def remove_query_and_fragment(url: str) -> str:
