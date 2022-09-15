@@ -1,6 +1,6 @@
 BOT_NAME = "naver_news"
-SPIDER_MODULES = ["spiders"]
-NEWSPIDER_MODULE = "spiders"
+SPIDER_MODULES = ["src.spiders"]
+NEWSPIDER_MODULE = "src.spiders"
 
 USER_AGENT = "Spider for Naver News"
 ROBOTSTXT_OBEY = False
