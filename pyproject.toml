@@ -5,7 +5,6 @@ description = "Naver news scraper written with scrapy"
 authors = ["Damien-IR <qq23667@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{ include = "naver_news_scraper" }]
 
 [tool.poetry.dependencies]
 python = "^3.7"
