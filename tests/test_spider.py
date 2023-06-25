@@ -46,23 +46,23 @@ class TestSpider(unittest.TestCase):
 
     def test_news_extract_article2(self):
         article_res: Response = get_scrapy_res_from_url(
-            "https://n.news.naver.com/mnews/article/014/0004557308"
+            "https://n.news.naver.com/mnews/article/015/0004476873"
         )
         news_item: News = self.news_spider.extract_article_item(article_res)
         self.assertEqual(article_res.status, 200)
-        self.assertEqual(news_item.oid, "014")
-        self.assertEqual(news_item.aid, "0004557308")
-        self.assertEqual(news_item.sid1, "105")
-        self.assertEqual(news_item.sid2, "226")
+        self.assertEqual(news_item.oid, "015")
+        self.assertEqual(news_item.aid, "0004476873")
+        self.assertEqual(news_item.sid1, "103")
+        self.assertEqual(news_item.sid2, "321")
         self.assertEqual(news_item.sid3, "000")
         self.assertEqual(
-            news_item.url, "https://n.news.naver.com/mnews/article/014/0004557308"
+            news_item.url, "https://n.news.naver.com/mnews/article/015/0004476873"
         )
-        self.assertEqual(news_item.upload_time, "2021-01-01 23:54:50")
-        self.assertEqual(news_item.edited_time, "2021-01-02 00:00:36")
+        self.assertEqual(news_item.upload_time, "2021-01-01 23:59:39")
+        self.assertEqual(news_item.edited_time, "2021-01-01 23:59:39")
         self.assertEqual(len(news_item.authors), 1)
-        self.assertEqual(news_item.authors[0].oid, "014")
-        self.assertEqual(news_item.authors[0].id, "20946")
+        self.assertEqual(news_item.authors[0].oid, "015")
+        self.assertEqual(news_item.authors[0].id, "74440")
 
     def test_news_extract_multi_authors(self):
         article_res: Response = get_scrapy_res_from_url(
